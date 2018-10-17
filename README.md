@@ -1,4 +1,4 @@
-# subreddit desktop wallpaper crawler v1.0.0
+# subreddit desktop wallpaper crawler v1.0.1
 sdwc grabs the top 7 posts from /r/earthporn and saves them in the ./output directory.
 
 I made this script because I ocasionally want another desktop wallpaper and grew tired of searching for something I like. This way, the reddit community decides what my wallpaper is and I can spend more time on actually doing my job.

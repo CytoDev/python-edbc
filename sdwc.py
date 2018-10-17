@@ -3,6 +3,7 @@ import os
 import requests
 import sys
 import wget
+import urllib.error
 
 sorting = "top"
 subreddit = "r/earthporn"
@@ -11,24 +12,24 @@ imagesToGrab = 7
 minResolution = {"width": 1920, "height": 1080}
 
 def main(imagesToGrab):
-    version = "v1.0.0"
+    version = "v1.0.1"
     baseURL = "https://www.reddit.com/"
 
     response = requests.get(baseURL + subreddit + "/" + sorting + "/.json?limit=100", headers = {"User-agent": "subreddit desktop wallpaper crawler " + version})
     jsondata = json.loads(response.text)
 
     if "error" in jsondata:
-        sys.stdout.write(jsondata["message"] + "\n")
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] " + jsondata["message"] + "\n")
 
     if "data" not in jsondata:
-        sys.stdout.write("Invalid data received: " + jsondata + "\n")
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] Invalid data received: " + jsondata + "\n")
 
         return
 
     cleanOutputDirectory()
 
     if "children" not in jsondata["data"]:
-        sys.stdout.write("No posts found on " + baseURL + subreddit + ".\n")
+        sys.stdout.write("[ \033[0;33mWARNING\033[m ] No posts found on " + baseURL + subreddit + ".\n")
 
         return
 
@@ -41,7 +42,7 @@ def main(imagesToGrab):
             return
 
         if "data" not in item:
-            sys.stdout.write("Subreddit contains no data.\n")
+            sys.stdout.write("[ \033[0;33mWARNING\033[m ] Subreddit contains no data.\n")
 
             continue
 
@@ -49,36 +50,36 @@ def main(imagesToGrab):
             postURL = baseURL + subreddit + "/comments/" + item["data"]["id"]
 
         if "preview" not in item["data"]:
-            sys.stdout.write(postURL + " contains no preview.\n")
+            sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no preview.\n")
 
             continue
 
         if "images" not in item["data"]["preview"]:
-            sys.stdout.write(postURL + " contains no images.\n")
+            sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no images.\n")
 
             continue
 
         for image in item["data"]["preview"]["images"]:
             if "source" not in image:
-                sys.stdout.write(postURL + " has no image source.\n")
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image source.\n")
 
                 continue
 
             if "url" not in image["source"]:
-                sys.stdout.write(postURL + " has no image URL.\n")
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image URL.\n")
 
                 continue
 
             if "height" not in image["source"] or "width" not in image["source"]:
-                sys.stdout.write(postURL + " image does not have any dimension data.\n")
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not have any dimension data.\n")
 
                 continue
 
             if checkImageDimensions(image["source"]["height"], image["source"]["width"]):
-                downloadImage(image["source"]["url"])
-                imagesGrabbed += 1
+                if downloadImage(image["source"]["url"]):
+                    imagesGrabbed += 1
             else:
-                sys.stdout.write(postURL + " image does not meet dimension requirements.\n")
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not meet dimension requirements.\n")
         pass
     pass
 
@@ -107,9 +108,22 @@ def checkImageDimensions(height, width):
     return True
 
 def downloadImage(url):
-    wget.download(url, "./output/" + url.split("/")[-1], wget.bar_thermometer)
-    sys.stdout.write("\n")
+    url = url.split("?")[0]
+    fileName = url.split("/")[-1]
 
-    return
+    if "preview.redd.it" in url:
+        url = "https://i.redd.it/" + fileName
+
+    try:
+        wget.download(url, "./output/" + fileName, wget.bar_thermometer)
+        sys.stdout.write("\n")
+
+        return True
+    except urllib.error.HTTPError as httpError:
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] Unable to download image from \"" + url + "\". " + str(httpError.code) + ": " + httpError.reason + "\n")
+    except ValueError as valueError:
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] " + str(valueError) + "\033[m\n")
+
+    return False
 
 main(imagesToGrab)

@@ -2,9 +2,6 @@
 When contributing to  this repository, please first discuss the change you wish
 to make via issue, email, or any other method before making a change.
 
-Please note we have a  [code of conduct](CODE_OF_CONDUCT.md),  please follow it
-in all your interactions with the project.
-
 ## Pull Request Process
 
 1. Follow the git-flow branching model as discribed
