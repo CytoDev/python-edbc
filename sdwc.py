@@ -19,17 +19,17 @@ def main(imagesToGrab):
     jsondata = json.loads(response.text)
 
     if "error" in jsondata:
-        sys.stdout.write(jsondata["message"] + "\n")
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] " + jsondata["message"] + "\n")
 
     if "data" not in jsondata:
-        sys.stdout.write("Invalid data received: " + jsondata + "\n")
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] Invalid data received: " + jsondata + "\n")
 
         return
 
     cleanOutputDirectory()
 
     if "children" not in jsondata["data"]:
-        sys.stdout.write("No posts found on " + baseURL + subreddit + ".\n")
+        sys.stdout.write("[ \033[0;33mWARNING\033[m ] No posts found on " + baseURL + subreddit + ".\n")
 
         return
 
@@ -42,7 +42,7 @@ def main(imagesToGrab):
             return
 
         if "data" not in item:
-            sys.stdout.write("Subreddit contains no data.\n")
+            sys.stdout.write("[ \033[0;33mWARNING\033[m ] Subreddit contains no data.\n")
 
             continue
 
@@ -50,28 +50,28 @@ def main(imagesToGrab):
             postURL = baseURL + subreddit + "/comments/" + item["data"]["id"]
 
         if "preview" not in item["data"]:
-            sys.stdout.write(postURL + " contains no preview.\n")
+            sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no preview.\n")
 
             continue
 
         if "images" not in item["data"]["preview"]:
-            sys.stdout.write(postURL + " contains no images.\n")
+            sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no images.\n")
 
             continue
 
         for image in item["data"]["preview"]["images"]:
             if "source" not in image:
-                sys.stdout.write(postURL + " has no image source.\n")
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image source.\n")
 
                 continue
 
             if "url" not in image["source"]:
-                sys.stdout.write(postURL + " has no image URL.\n")
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image URL.\n")
 
                 continue
 
             if "height" not in image["source"] or "width" not in image["source"]:
-                sys.stdout.write(postURL + " image does not have any dimension data.\n")
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not have any dimension data.\n")
 
                 continue
 
@@ -79,7 +79,7 @@ def main(imagesToGrab):
                 if downloadImage(image["source"]["url"]):
                     imagesGrabbed += 1
             else:
-                sys.stdout.write(postURL + " image does not meet dimension requirements.\n")
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not meet dimension requirements.\n")
         pass
     pass
 
@@ -120,9 +120,9 @@ def downloadImage(url):
 
         return True
     except urllib.error.HTTPError as httpError:
-        sys.stdout.write("Unable to download image from \"" + url + "\". " + str(httpError.code) + ": " + httpError.reason + "\n")
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] Unable to download image from \"" + url + "\". " + str(httpError.code) + ": " + httpError.reason + "\n")
     except ValueError as valueError:
-        sys.stdout.write(str(valueError) + "\033[m\n")
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] " + str(valueError) + "\033[m\n")
 
     return False
 
