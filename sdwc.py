@@ -3,6 +3,7 @@ import os
 import requests
 import sys
 import wget
+import urllib.error
 
 sorting = "top"
 subreddit = "r/earthporn"
@@ -75,8 +76,8 @@ def main(imagesToGrab):
                 continue
 
             if checkImageDimensions(image["source"]["height"], image["source"]["width"]):
-                downloadImage(image["source"]["url"])
-                imagesGrabbed += 1
+                if downloadImage(image["source"]["url"]):
+                    imagesGrabbed += 1
             else:
                 sys.stdout.write(postURL + " image does not meet dimension requirements.\n")
         pass
@@ -107,9 +108,22 @@ def checkImageDimensions(height, width):
     return True
 
 def downloadImage(url):
-    wget.download(url, "./output/" + url.split("/")[-1], wget.bar_thermometer)
-    sys.stdout.write("\n")
+    url = url.split("?")[0]
+    fileName = url.split("/")[-1]
 
-    return
+    if "preview.redd.it" in url:
+        url = "https://i.redd.it/" + fileName
+
+    try:
+        wget.download(url, "./output/" + fileName, wget.bar_thermometer)
+        sys.stdout.write("\n")
+
+        return True
+    except urllib.error.HTTPError as httpError:
+        sys.stdout.write("Unable to download image from \"" + url + "\". " + str(httpError.code) + ": " + httpError.reason + "\n")
+    except ValueError as valueError:
+        sys.stdout.write(str(valueError) + "\033[m\n")
+
+    return False
 
 main(imagesToGrab)
