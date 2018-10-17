@@ -12,7 +12,7 @@ imagesToGrab = 7
 minResolution = {"width": 1920, "height": 1080}
 
 def main(imagesToGrab):
-    version = "v1.0.0"
+    version = "v1.0.1"
     baseURL = "https://www.reddit.com/"
 
     response = requests.get(baseURL + subreddit + "/" + sorting + "/.json?limit=100", headers = {"User-agent": "subreddit desktop wallpaper crawler " + version})
