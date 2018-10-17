@@ -120,9 +120,9 @@ def downloadImage(url):
 
         return True
     except urllib.error.HTTPError as httpError:
-        sys.stdout.write("Unable to download image from \"" + url + "\". " + str(httpError.code) + ": " + httpError.reason + "\n")
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] Unable to download image from \"" + url + "\". " + str(httpError.code) + ": " + httpError.reason + "\n")
     except ValueError as valueError:
-        sys.stdout.write(str(valueError) + "\033[m\n")
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] " + str(valueError) + "\033[m\n")
 
     return False
 
