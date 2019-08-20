@@ -9,6 +9,7 @@ import argparse
 import urllib.error
 
 version = "v1.0.1"
+verbose = False
 baseURL = "https://www.reddit.com/"
 sorting = "top"
 subreddit = "earthporn"
@@ -18,11 +19,24 @@ minResolution = {"height": 1080, "width": 1920}
 outputDir = os.path.realpath(os.path.dirname(__file__)) + "/output"
 parser = argparse.ArgumentParser(description="Crawl a subreddit for suitable wallpapers")
 
-def main(imagesToGrab):
-    version = "v1.0.1"
-    baseURL = "https://www.reddit.com/"
+def main():
+    if verbose:
+        sys.stdout.write("subreddit........: " + subreddit + "\n")
+        sys.stdout.write("sorting..........: " + sorting + "\n")
+        sys.stdout.write("orientation......: " + orientation + "\n")
+        sys.stdout.write("max images.......: " + str(imagesToGrab) + "\n")
+        sys.stdout.write("min height.......: " + str(minResolution["height"]) + "\n")
+        sys.stdout.write("min width........: " + str(minResolution["width"]) + "\n")
+        sys.stdout.write("output directory.: " + outputDir + "\n")
 
     response = requests.get(baseURL + subreddit + "/" + sorting + "/.json?limit=100", headers = {"User-agent": "subreddit desktop wallpaper crawler " + version})
+
+    grab();
+
+    return
+
+def grab(imagesGrabbed = 0, after = ""):
+    response = requests.get(baseURL + subreddit + "/" + sorting + "/.json?limit=100" + after, headers = {"User-agent": "subreddit desktop wallpaper crawler " + version})
     jsondata = json.loads(response.text)
 
     if "error" in jsondata:
@@ -33,14 +47,11 @@ def main(imagesToGrab):
 
         return
 
-    cleanOutputDirectory()
-
     if "children" not in jsondata["data"]:
-        sys.stdout.write("[ \033[0;33mWARNING\033[m ] No posts found on " + baseURL + subreddit + ".\n")
+        if verbose:
+            sys.stdout.write("[ \033[0;33mWARNING\033[m ] No posts found on " + baseURL + subreddit + ".\n")
 
         return
-
-    imagesGrabbed = 0
 
     for item in jsondata["data"]["children"]:
         postURL = "Post"
@@ -49,7 +60,8 @@ def main(imagesToGrab):
             return
 
         if "data" not in item:
-            sys.stdout.write("[ \033[0;33mWARNING\033[m ] Subreddit contains no data.\n")
+            if verbose:
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] Subreddit contains no data.\n")
 
             continue
 
@@ -57,28 +69,33 @@ def main(imagesToGrab):
             postURL = baseURL + subreddit + "/comments/" + item["data"]["id"]
 
         if "preview" not in item["data"]:
-            sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no preview.\n")
+            if verbose:
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no preview.\n")
 
             continue
 
         if "images" not in item["data"]["preview"]:
-            sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no images.\n")
+            if verbose:
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no images.\n")
 
             continue
 
         for image in item["data"]["preview"]["images"]:
             if "source" not in image:
-                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image source.\n")
+                if verbose:
+                    sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image source.\n")
 
                 continue
 
             if "url" not in image["source"]:
-                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image URL.\n")
+                if verbose:
+                    sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image URL.\n")
 
                 continue
 
             if "height" not in image["source"] or "width" not in image["source"]:
-                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not have any dimension data.\n")
+                if verbose:
+                    sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not have any dimension data.\n")
 
                 continue
 
@@ -86,9 +103,19 @@ def main(imagesToGrab):
                 if downloadImage(image["source"]["url"]):
                     imagesGrabbed += 1
             else:
-                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not meet dimension requirements.\n")
+                if verbose:
+                    sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not meet dimension requirements.\n")
         pass
     pass
+
+    if imagesGrabbed != imagesToGrab:
+        if "after" not in jsondata["data"] or jsondata["data"]["after"] is None:
+            if verbose:
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] ")
+
+            sys.stdout.write("Reached end of list after " + str(imagesGrabbed) + " of " + str(imagesToGrab) + " suitable wallpapers\n")
+        else:
+            grab(imagesGrabbed, "&after=" + jsondata["data"]["after"])
 
     return
 
