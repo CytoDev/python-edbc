@@ -13,7 +13,7 @@ baseURL = "https://www.reddit.com/"
 sorting = "top"
 subreddit = "earthporn"
 orientation = "landscape"
-imagesToGrab = 7
+imagesToGrab = 20
 minResolution = {"height": 1080, "width": 1920}
 outputDir = os.path.realpath(os.path.dirname(__file__)) + "/output"
 parser = argparse.ArgumentParser(description="Crawl a subreddit for suitable wallpapers")
