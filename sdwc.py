@@ -49,7 +49,7 @@ def grab(imagesGrabbed = 0, after = ""):
         sys.stdout.write("[  \033[0;31mERROR\033[m  ] " + jsondata["message"] + "\n")
 
     if "data" not in jsondata:
-        sys.stdout.write("[  \033[0;31mERROR\033[m  ] Invalid data received: " + jsondata + "\n")
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] Invalid data received: " + str(jsondata) + "\n")
 
         return
 
