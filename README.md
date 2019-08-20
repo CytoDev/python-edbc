@@ -9,15 +9,15 @@ I made this script because I ocasionally want another desktop wallpaper and grew
 ```
 
 ## Hacking:
-This script can easily be modified to grab posts from other subreddits. Simply point the `subreddit` variable in `sdwc.py` to the subreddit you want to grab images from and fire it up by typing `python3 sdwc.py` in your terminal.
-
-You cal also set requirements for resolution and orientation; and the number of images to grab at the top of the Python file
+This script can easily be modified to grab posts from other subreddits. See `sdwc.py --help` for more
 
 ## Dependencies
 ##### Default libraries
+ - [argparse](https://docs.python.org/3/library/argparse.html)
  - [json](https://docs.python.org/3/library/json.html)
  - [os](https://docs.python.org/3/library/os.html)
  - [sys](https://docs.python.org/3/library/sys.html)
+ - [urllib.error](https://docs.python.org/3/library/urllib.error.html)
 
 ##### Third party libraries
  - [requests](https://pypi.org/project/requests/)
