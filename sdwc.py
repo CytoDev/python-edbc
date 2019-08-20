@@ -5,13 +5,18 @@ import os
 import requests
 import sys
 import wget
+import argparse
 import urllib.error
 
+version = "v1.0.1"
+baseURL = "https://www.reddit.com/"
 sorting = "top"
-subreddit = "r/earthporn"
+subreddit = "earthporn"
 orientation = "landscape"
 imagesToGrab = 7
-minResolution = {"width": 1920, "height": 1080}
+minResolution = {"height": 1080, "width": 1920}
+outputDir = os.path.realpath(os.path.dirname(__file__)) + "/output"
+parser = argparse.ArgumentParser(description="Crawl a subreddit for suitable wallpapers")
 
 def main(imagesToGrab):
     version = "v1.0.1"
@@ -88,11 +93,11 @@ def main(imagesToGrab):
     return
 
 def cleanOutputDirectory():
-    for dirpath, dirnames, filenames in os.walk("./output"):
+    for dirpath, dirnames, filenames in os.walk(outputDir):
         for name in filenames:
             path = os.path.join(dirpath, name)
 
-            if path != "./output/.gitkeep":
+            if path != outputDir + "/.gitkeep":
                 os.unlink(path)
 
     return
@@ -117,7 +122,7 @@ def downloadImage(url):
         url = "https://i.redd.it/" + fileName
 
     try:
-        wget.download(url, "./output/" + fileName, wget.bar_thermometer)
+        wget.download(url, outputDir + "/" + fileName, wget.bar_thermometer)
         sys.stdout.write("\n")
 
         return True
@@ -128,4 +133,85 @@ def downloadImage(url):
 
     return False
 
-main(imagesToGrab)
+parser.add_argument("-m", "--max",
+    dest="imagesToGrab",
+    metavar="",
+    default=imagesToGrab,
+    type=int,
+    help="Number of images to download"
+)
+
+parser.add_argument("-o", "--orientation",
+    dest="orientation",
+    metavar="",
+    default=orientation,
+    type=str,
+    help="Change orientation to user input [default: " + orientation + "]"
+)
+
+parser.add_argument("-r", "--subreddit",
+    dest="subreddit",
+    metavar="",
+    default=subreddit,
+    type=str,
+    help="Change subreddit to user input [default: r/" + subreddit + "]"
+)
+
+parser.add_argument("-s", "--sorting",
+    dest="sorting",
+    metavar="",
+    default=sorting,
+    type=str,
+    help="Change sorting to user input [default: " + sorting + "]"
+)
+
+parser.add_argument("-v", "--version",
+    action="store_true",
+    help="Show version information"
+)
+
+parser.add_argument("--min-width",
+    dest="minWidth",
+    metavar="",
+    default=minResolution["width"],
+    type=int,
+    help="Change minimum resolution width constraint to user input [default: " + str(minResolution["width"]) + "]"
+)
+
+parser.add_argument("--min-height",
+    dest="minHeight",
+    metavar="",
+    default=minResolution["height"],
+    type=int,
+    help="Change minimum resolution height constraint to user input [default: " + str(minResolution["height"]) + "]"
+)
+
+parser.add_argument("--output",
+    dest="outputDir",
+    metavar="",
+    default=outputDir,
+    type=str,
+    help="Change output directory to user input [default: " + outputDir + "]"
+)
+
+parser.add_argument("--verbose",
+    action="store_true",
+    help="Print verbose process output"
+)
+
+args = parser.parse_args()
+
+imagesToGrab = args.imagesToGrab
+sorting = args.sorting
+subreddit = "r/" + args.subreddit
+orientation = args.orientation
+minResolution["height"] = args.minHeight
+minResolution["width"] = args.minWidth
+outputDir = args.outputDir
+verbose = args.verbose
+
+if args.version:
+    sys.stdout.write(os.path.basename(__file__) + " " + version + "\n")
+    sys.exit(0)
+
+main()
