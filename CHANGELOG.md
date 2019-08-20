@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 
 ## [Unreleased](https://github.com/CytoDev/python-edbc/compare/master...dev)
 
+## [1.1.0] - 2019-08-20
+### Added
+ - Add command line flags to change default settings
+
 ## [1.0.1] - 2018-10-17
 ### Changed
  - Messages printed to the terminal now have colors and a type description
@@ -18,6 +22,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/) a
 ## [1.0.0] - 2018-10-03
 ### Initial release
 
+[1.1.0]: https://github.com/CytoDev/python-edbc/compare/v1.0.0...v1.1.0
 [1.0.1]: https://github.com/CytoDev/python-edbc/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/CytoDev/python-edbc/compare/a18526...v1.0.0
 

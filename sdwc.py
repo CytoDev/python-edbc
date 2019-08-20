@@ -1,39 +1,63 @@
+#!/usr/bin/env python
+
 import json
 import os
 import requests
 import sys
 import wget
+import argparse
 import urllib.error
 
+version = "v1.0.1"
+verbose = False
+baseURL = "https://www.reddit.com/"
 sorting = "top"
-subreddit = "r/earthporn"
+subreddit = "earthporn"
 orientation = "landscape"
-imagesToGrab = 7
-minResolution = {"width": 1920, "height": 1080}
+imagesToGrab = 20
+minResolution = {"height": 1080, "width": 1920}
+outputDir = os.path.realpath(os.path.dirname(__file__)) + "/output"
+parser = argparse.ArgumentParser(description="Crawl a subreddit for suitable wallpapers")
 
-def main(imagesToGrab):
-    version = "v1.0.1"
-    baseURL = "https://www.reddit.com/"
+def main():
+    if verbose:
+        sys.stdout.write("subreddit........: " + subreddit + "\n")
+        sys.stdout.write("sorting..........: " + sorting + "\n")
+        sys.stdout.write("orientation......: " + orientation + "\n")
+        sys.stdout.write("max images.......: " + str(imagesToGrab) + "\n")
+        sys.stdout.write("min height.......: " + str(minResolution["height"]) + "\n")
+        sys.stdout.write("min width........: " + str(minResolution["width"]) + "\n")
+        sys.stdout.write("output directory.: " + outputDir + "\n")
 
-    response = requests.get(baseURL + subreddit + "/" + sorting + "/.json?limit=100", headers = {"User-agent": "subreddit desktop wallpaper crawler " + version})
+    if not os.path.exists(outputDir):
+        try:
+            os.makedirs(outputDir)
+        except OSError:
+            sys.stdout.write("[  \033[0;31mERROR\033[m  ] Unable to create directory: " + outputDir + "\n")
+    else:
+        cleanOutputDirectory()
+
+    grab();
+
+    return
+
+def grab(imagesGrabbed = 0, after = ""):
+    response = requests.get(baseURL + subreddit + "/" + sorting + "/.json?limit=100" + after, headers = {"User-agent": "subreddit desktop wallpaper crawler " + version})
     jsondata = json.loads(response.text)
 
     if "error" in jsondata:
         sys.stdout.write("[  \033[0;31mERROR\033[m  ] " + jsondata["message"] + "\n")
 
     if "data" not in jsondata:
-        sys.stdout.write("[  \033[0;31mERROR\033[m  ] Invalid data received: " + jsondata + "\n")
+        sys.stdout.write("[  \033[0;31mERROR\033[m  ] Invalid data received: " + str(jsondata) + "\n")
 
         return
-
-    cleanOutputDirectory()
 
     if "children" not in jsondata["data"]:
-        sys.stdout.write("[ \033[0;33mWARNING\033[m ] No posts found on " + baseURL + subreddit + ".\n")
+        if verbose:
+            sys.stdout.write("[ \033[0;33mWARNING\033[m ] No posts found on " + baseURL + subreddit + ".\n")
 
         return
-
-    imagesGrabbed = 0
 
     for item in jsondata["data"]["children"]:
         postURL = "Post"
@@ -42,7 +66,8 @@ def main(imagesToGrab):
             return
 
         if "data" not in item:
-            sys.stdout.write("[ \033[0;33mWARNING\033[m ] Subreddit contains no data.\n")
+            if verbose:
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] Subreddit contains no data.\n")
 
             continue
 
@@ -50,28 +75,33 @@ def main(imagesToGrab):
             postURL = baseURL + subreddit + "/comments/" + item["data"]["id"]
 
         if "preview" not in item["data"]:
-            sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no preview.\n")
+            if verbose:
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no preview.\n")
 
             continue
 
         if "images" not in item["data"]["preview"]:
-            sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no images.\n")
+            if verbose:
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " contains no images.\n")
 
             continue
 
         for image in item["data"]["preview"]["images"]:
             if "source" not in image:
-                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image source.\n")
+                if verbose:
+                    sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image source.\n")
 
                 continue
 
             if "url" not in image["source"]:
-                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image URL.\n")
+                if verbose:
+                    sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " has no image URL.\n")
 
                 continue
 
             if "height" not in image["source"] or "width" not in image["source"]:
-                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not have any dimension data.\n")
+                if verbose:
+                    sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not have any dimension data.\n")
 
                 continue
 
@@ -79,18 +109,28 @@ def main(imagesToGrab):
                 if downloadImage(image["source"]["url"]):
                     imagesGrabbed += 1
             else:
-                sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not meet dimension requirements.\n")
+                if verbose:
+                    sys.stdout.write("[ \033[0;33mWARNING\033[m ] " + postURL + " image does not meet dimension requirements.\n")
         pass
     pass
+
+    if imagesGrabbed != imagesToGrab:
+        if "after" not in jsondata["data"] or jsondata["data"]["after"] is None:
+            if verbose:
+                sys.stdout.write("[ \033[0;33mWARNING\033[m ] ")
+
+            sys.stdout.write("Reached end of list after " + str(imagesGrabbed) + " of " + str(imagesToGrab) + " suitable wallpapers\n")
+        else:
+            grab(imagesGrabbed, "&after=" + jsondata["data"]["after"])
 
     return
 
 def cleanOutputDirectory():
-    for dirpath, dirnames, filenames in os.walk("./output"):
+    for dirpath, dirnames, filenames in os.walk(outputDir):
         for name in filenames:
             path = os.path.join(dirpath, name)
 
-            if path != "./output/.gitkeep":
+            if path != outputDir + "/.gitkeep":
                 os.unlink(path)
 
     return
@@ -115,7 +155,7 @@ def downloadImage(url):
         url = "https://i.redd.it/" + fileName
 
     try:
-        wget.download(url, "./output/" + fileName, wget.bar_thermometer)
+        wget.download(url, outputDir + "/" + fileName, wget.bar_thermometer)
         sys.stdout.write("\n")
 
         return True
@@ -126,4 +166,85 @@ def downloadImage(url):
 
     return False
 
-main(imagesToGrab)
+parser.add_argument("-m", "--max",
+    dest="imagesToGrab",
+    metavar="",
+    default=imagesToGrab,
+    type=int,
+    help="Number of images to download"
+)
+
+parser.add_argument("-o", "--orientation",
+    dest="orientation",
+    metavar="",
+    default=orientation,
+    type=str,
+    help="Change orientation to user input [default: " + orientation + "]"
+)
+
+parser.add_argument("-r", "--subreddit",
+    dest="subreddit",
+    metavar="",
+    default=subreddit,
+    type=str,
+    help="Change subreddit to user input [default: r/" + subreddit + "]"
+)
+
+parser.add_argument("-s", "--sorting",
+    dest="sorting",
+    metavar="",
+    default=sorting,
+    type=str,
+    help="Change sorting to user input [default: " + sorting + "]"
+)
+
+parser.add_argument("-v", "--version",
+    action="store_true",
+    help="Show version information"
+)
+
+parser.add_argument("--min-width",
+    dest="minWidth",
+    metavar="",
+    default=minResolution["width"],
+    type=int,
+    help="Change minimum resolution width constraint to user input [default: " + str(minResolution["width"]) + "]"
+)
+
+parser.add_argument("--min-height",
+    dest="minHeight",
+    metavar="",
+    default=minResolution["height"],
+    type=int,
+    help="Change minimum resolution height constraint to user input [default: " + str(minResolution["height"]) + "]"
+)
+
+parser.add_argument("--output",
+    dest="outputDir",
+    metavar="",
+    default=outputDir,
+    type=str,
+    help="Change output directory to user input [default: " + outputDir + "]"
+)
+
+parser.add_argument("--verbose",
+    action="store_true",
+    help="Print verbose process output"
+)
+
+args = parser.parse_args()
+
+imagesToGrab = args.imagesToGrab
+sorting = args.sorting
+subreddit = "r/" + args.subreddit
+orientation = args.orientation
+minResolution["height"] = args.minHeight
+minResolution["width"] = args.minWidth
+outputDir = args.outputDir
+verbose = args.verbose
+
+if args.version:
+    sys.stdout.write(os.path.basename(__file__) + " " + version + "\n")
+    sys.exit(0)
+
+main()
