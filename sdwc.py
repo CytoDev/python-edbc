@@ -29,7 +29,13 @@ def main():
         sys.stdout.write("min width........: " + str(minResolution["width"]) + "\n")
         sys.stdout.write("output directory.: " + outputDir + "\n")
 
-    response = requests.get(baseURL + subreddit + "/" + sorting + "/.json?limit=100", headers = {"User-agent": "subreddit desktop wallpaper crawler " + version})
+    if not os.path.exists(outputDir):
+        try:
+            os.makedirs(outputDir)
+        except OSError:
+            sys.stdout.write("[  \033[0;31mERROR\033[m  ] Unable to create directory: " + outputDir + "\n")
+    else:
+        cleanOutputDirectory()
 
     grab();
 
